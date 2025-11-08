@@ -7,7 +7,7 @@ export interface Logger {
 
 export class OutputChannelLogger implements Logger, vscode.Disposable {
   private readonly outputChannel = vscode.window.createOutputChannel(
-    'Music & YouTube Sidebar',
+    'Music YouTube Sidebar',
     { log: true },
   );
 

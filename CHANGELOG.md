@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.1.8
+
+- Changed the name of the extension from "Music & YouTube Sidebar" to "Music YouTube Sidebar" to allow for better discoverability and searchability.
+
 ## 1.1.5
 
 - Added a dedicated YouTube sidebar view that works without an active browser

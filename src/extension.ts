@@ -70,7 +70,7 @@ export const activate = async (
     vscode.commands.registerCommand(COMMANDS.refresh, () => provider.refresh()),
   );
 
-  logger.info('Music & YouTube Sidebar activated');
+  logger.info('Music YouTube Sidebar activated');
 };
 
 export const deactivate = (): void => {

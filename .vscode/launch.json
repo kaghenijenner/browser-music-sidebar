@@ -2,7 +2,7 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "Run Music & YouTube Sidebar",
+      "name": "Run Music YouTube Sidebar",
       "type": "extensionHost",
       "request": "launch",
       "args": [

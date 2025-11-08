@@ -1,7 +1,7 @@
-# Music & YouTube Sidebar
+# Music YouTube Sidebar
 
 Control music from the Visual Studio Code Activity Bar on Linux,
-Windows, and macOS. Music & YouTube Sidebar uses each operating system's media
+Windows, and macOS. Music YouTube Sidebar uses each operating system's media
 session interface and does not use a remote backend, browser credentials, or
 Electron APIs.
 
@@ -45,7 +45,7 @@ and `ffmpeg` on `PATH` on every platform.
 
 ## Installation
 
-Open the **Extensions** view in VS Code, search for **Music & YouTube Sidebar**,
+Open the **Extensions** view in VS Code, search for **Music YouTube Sidebar**,
 and select **Install**. VS Code automatically installs the package for your
 operating system.
 
@@ -117,7 +117,7 @@ MediaRemote interface; macOS updates can temporarily affect compatibility.
 
 ## Configuration
 
-Open **Settings** and search for `Music & YouTube Sidebar`.
+Open **Settings** and search for `Music YouTube Sidebar`.
 
 | Setting | Type | Default | Description |
 | --- | --- | --- | --- |
