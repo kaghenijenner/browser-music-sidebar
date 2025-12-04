@@ -384,7 +384,7 @@ export class MusicSidebarProvider
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta http-equiv="Content-Security-Policy" content="default-src 'none'; frame-src ${youtubeFrameSource}; img-src ${webview.cspSource} https: http: data:; style-src ${webview.cspSource}; script-src 'nonce-${nonce}';">
   <link rel="stylesheet" href="${styleUri.toString()}">
-  <title>Browser Music Sidebar</title>
+  <title>Music & YouTube Sidebar</title>
 </head>
 <body>
   <main class="player" aria-live="polite">

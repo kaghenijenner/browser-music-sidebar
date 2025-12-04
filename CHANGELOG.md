@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 1.1.5
 
 - Added a dedicated YouTube sidebar view that works without an active browser
   media session.

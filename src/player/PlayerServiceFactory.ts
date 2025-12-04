@@ -19,7 +19,7 @@ class UnsupportedPlatformPlayerService implements MediaPlayerService {
   public getState(): Promise<PlayerState> {
     return Promise.resolve(
       createEmptyPlayerState(
-        `Browser Music Sidebar does not support ${this.platform}.`,
+        `Music & YouTube Sidebar does not support ${this.platform}.`,
         false,
       ),
     );
