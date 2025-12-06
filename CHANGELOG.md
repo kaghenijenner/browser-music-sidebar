@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 1.1.4
 
 - Added optional muted YouTube video playback in the artwork panel, synchronized
   with the active browser media session through a native video element and a
