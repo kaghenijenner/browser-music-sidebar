@@ -1,0 +1,50 @@
+# Dependencies and package-manager state
+node_modules/
+.pnpm-store/
+package-lock.json
+npm-shrinkwrap.json
+yarn.lock
+
+# Compiled output and generated packages
+out/
+dist/
+coverage/
+*.tsbuildinfo
+*.vsix
+*.tgz
+
+# Test and tool output
+.vscode-test/
+.vscode-test-web/
+test-results/
+.eslintcache
+*.log
+npm-debug.log*
+pnpm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Secrets and local configuration
+.env
+.env.*
+!.env.example
+.vsce/
+*.pat
+*.token
+*.pem
+*.key
+*.p12
+*.pfx
+secrets.*
+PUBLISHING.local.md
+
+# Editor and operating-system files
+.idea/
+.history/
+*.code-workspace
+.DS_Store
+Thumbs.db
+Desktop.ini
+*~
+*.swp
+*.swo

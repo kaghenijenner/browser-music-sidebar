@@ -1,0 +1,165 @@
+{
+  "name": "browser-music-sidebar",
+  "displayName": "Browser Music Sidebar",
+  "description": "Control browser media from the VS Code Activity Bar on Linux, Windows, and macOS.",
+  "version": "1.1.2",
+  "publisher": "kaghenijenner",
+  "icon": "media/icon.png",
+  "license": "MIT",
+  "packageManager": "pnpm@11.3.0",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "keywords": [
+    "music",
+    "mpris",
+    "playerctl",
+    "now playing",
+    "windows media",
+    "browser",
+    "spotify",
+    "apple music",
+    "youtube music"
+  ],
+  "main": "./out/extension.js",
+  "vsce": {
+    "dependencies": false,
+    "allowMissingRepository": true
+  },
+  "extensionKind": [
+    "ui"
+  ],
+  "activationEvents": [
+    "onView:browserMusicSidebar.view",
+    "onCommand:browserMusicSidebar.playPause",
+    "onCommand:browserMusicSidebar.next",
+    "onCommand:browserMusicSidebar.previous",
+    "onCommand:browserMusicSidebar.refresh"
+  ],
+  "capabilities": {
+    "untrustedWorkspaces": {
+      "supported": true
+    },
+    "virtualWorkspaces": true
+  },
+  "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "browserMusicSidebar",
+          "title": "Browser Music",
+          "icon": "media/music.svg"
+        }
+      ]
+    },
+    "views": {
+      "browserMusicSidebar": [
+        {
+          "type": "webview",
+          "id": "browserMusicSidebar.view",
+          "name": "Now Playing"
+        }
+      ]
+    },
+    "commands": [
+      {
+        "command": "browserMusicSidebar.playPause",
+        "title": "Play/Pause",
+        "category": "Browser Music"
+      },
+      {
+        "command": "browserMusicSidebar.next",
+        "title": "Next",
+        "category": "Browser Music"
+      },
+      {
+        "command": "browserMusicSidebar.previous",
+        "title": "Previous",
+        "category": "Browser Music"
+      },
+      {
+        "command": "browserMusicSidebar.refresh",
+        "title": "Refresh",
+        "category": "Browser Music",
+        "icon": "$(refresh)"
+      }
+    ],
+    "menus": {
+      "view/title": [
+        {
+          "command": "browserMusicSidebar.refresh",
+          "when": "view == browserMusicSidebar.view",
+          "group": "navigation"
+        }
+      ]
+    },
+    "keybindings": [
+      {
+        "command": "browserMusicSidebar.playPause",
+        "key": "ctrl+alt+space",
+        "mac": "cmd+alt+space"
+      },
+      {
+        "command": "browserMusicSidebar.next",
+        "key": "ctrl+alt+right",
+        "mac": "cmd+alt+right"
+      },
+      {
+        "command": "browserMusicSidebar.previous",
+        "key": "ctrl+alt+left",
+        "mac": "cmd+alt+left"
+      }
+    ],
+    "configuration": {
+      "title": "Browser Music Sidebar",
+      "properties": {
+        "browserMusicSidebar.player": {
+          "type": "string",
+          "default": "chromium",
+          "description": "Linux: playerctl player name. Windows: substring of the media session application ID. Leave empty to use the active system media player. macOS always uses the system Now Playing session.",
+          "scope": "window"
+        },
+        "browserMusicSidebar.refreshInterval": {
+          "type": "number",
+          "default": 1500,
+          "minimum": 500,
+          "description": "Metadata refresh interval in milliseconds.",
+          "scope": "window"
+        },
+        "browserMusicSidebar.showTrackNotifications": {
+          "type": "boolean",
+          "default": false,
+          "description": "Show a VS Code notification when the current track changes.",
+          "scope": "window"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "pnpm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "lint": "eslint \"src/**/*.ts\"",
+    "check": "pnpm run lint && pnpm run compile",
+    "package": "vsce package",
+    "package:linux": "vsce package --target linux-x64",
+    "package:windows:x64": "vsce package --target win32-x64",
+    "package:windows:arm64": "vsce package --target win32-arm64",
+    "package:windows": "pnpm run package:windows:x64 && pnpm run package:windows:arm64",
+    "package:macos:x64": "vsce package --target darwin-x64",
+    "package:macos:arm64": "vsce package --target darwin-arm64",
+    "package:macos": "pnpm run package:macos:x64 && pnpm run package:macos:arm64",
+    "package:platforms": "pnpm run package:linux && pnpm run package:windows && pnpm run package:macos"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "@types/vscode": "^1.85.0",
+    "@vscode/vsce": "^3.2.2",
+    "eslint": "^10.8.0",
+    "typescript": "^5.7.2",
+    "typescript-eslint": "^8.18.0"
+  }
+}

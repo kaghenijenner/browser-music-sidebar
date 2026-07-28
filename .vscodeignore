@@ -1,0 +1,12 @@
+.vscode/**
+.agents/**
+.codex/**
+src/**
+eslint.config.mjs
+.gitignore
+PUBLISHING.local.md
+tsconfig.json
+pnpm-lock.yaml
+pnpm-workspace.yaml
+*.vsix
+node_modules/**

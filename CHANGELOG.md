@@ -1,0 +1,26 @@
+# Changelog
+
+## 1.1.2
+
+- Simplified the Marketplace description for end users.
+- Removed internal development, packaging, publishing, and screenshot
+  placeholder content from the public listing.
+
+## 1.1.1
+
+- Added the extension icon shown on the Visual Studio Marketplace.
+
+## 1.1.0
+
+- Added native Windows browser media discovery and control through Global System
+  Media Transport Controls.
+- Added macOS Now Playing metadata and playback control through
+  `nowplaying-cli`.
+- Added per-player capability detection so unsupported controls are disabled.
+- Added Linux, Windows x64/ARM64, and macOS Intel/Apple Silicon packages.
+
+## 1.0.0
+
+- Initial release.
+- Added MPRIS browser playback controls, metadata, artwork, progress, seeking,
+  volume, mute, shuffle, repeat, commands, keybindings, and notifications.

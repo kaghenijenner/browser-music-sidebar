@@ -1,0 +1,193 @@
+:root {
+  color-scheme: light dark;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  padding: 0;
+  margin: 0;
+  color: var(--vscode-foreground);
+  background: var(--vscode-sideBar-background);
+  font-family: var(--vscode-font-family);
+  font-size: var(--vscode-font-size);
+}
+
+.player {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 14px;
+}
+
+.artwork-frame {
+  position: relative;
+  width: min(100%, 280px);
+  aspect-ratio: 1;
+  align-self: center;
+  overflow: hidden;
+  border: 1px solid var(--vscode-widget-border);
+  border-radius: 8px;
+  background: var(--vscode-editorWidget-background);
+}
+
+.artwork,
+.artwork-placeholder {
+  width: 100%;
+  height: 100%;
+}
+
+.artwork {
+  display: block;
+  object-fit: cover;
+}
+
+.artwork-placeholder {
+  display: grid;
+  place-items: center;
+  color: var(--vscode-descriptionForeground);
+  font-size: 72px;
+  user-select: none;
+}
+
+.hidden {
+  display: none;
+}
+
+.metadata {
+  min-width: 0;
+  text-align: center;
+}
+
+.metadata h1,
+.metadata p {
+  overflow: hidden;
+  margin: 0;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.metadata h1 {
+  font-size: 1.2rem;
+  line-height: 1.5;
+}
+
+.metadata p {
+  margin-top: 3px;
+}
+
+.secondary,
+.player-name,
+.time-row,
+.message {
+  color: var(--vscode-descriptionForeground);
+}
+
+.status {
+  display: inline-block;
+  padding: 2px 8px;
+  margin-top: 8px;
+  border: 1px solid var(--vscode-widget-border);
+  border-radius: 999px;
+  color: var(--vscode-badge-foreground);
+  background: var(--vscode-badge-background);
+}
+
+.player-name {
+  font-size: 0.9em;
+}
+
+.progress-section,
+.volume-section {
+  display: flex;
+  gap: 8px;
+}
+
+.progress-section {
+  flex-direction: column;
+}
+
+.time-row {
+  display: flex;
+  justify-content: space-between;
+  font-variant-numeric: tabular-nums;
+}
+
+.transport,
+.options {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+button {
+  min-width: 32px;
+  min-height: 30px;
+  padding: 4px 7px;
+  border: 1px solid var(--vscode-button-border, var(--vscode-widget-border));
+  border-radius: 4px;
+  color: var(--vscode-button-secondaryForeground);
+  background: var(--vscode-button-secondaryBackground);
+  font: inherit;
+  cursor: pointer;
+}
+
+button:hover:not(:disabled) {
+  background: var(--vscode-button-secondaryHoverBackground);
+}
+
+button.primary,
+button.active {
+  color: var(--vscode-button-foreground);
+  background: var(--vscode-button-background);
+}
+
+button.primary:hover:not(:disabled),
+button.active:hover:not(:disabled) {
+  background: var(--vscode-button-hoverBackground);
+}
+
+button:focus-visible,
+input:focus-visible {
+  outline: 1px solid var(--vscode-focusBorder);
+  outline-offset: 2px;
+}
+
+button:disabled,
+input:disabled {
+  cursor: default;
+  opacity: 0.5;
+}
+
+.options {
+  flex-wrap: wrap;
+}
+
+.volume-section {
+  align-items: center;
+}
+
+.volume-section input {
+  flex: 1;
+  min-width: 0;
+}
+
+.volume-section span {
+  min-width: 3.2em;
+  text-align: end;
+  font-variant-numeric: tabular-nums;
+}
+
+input[type='range'] {
+  width: 100%;
+  accent-color: var(--vscode-progressBar-background);
+}
+
+.message {
+  min-height: 1.2em;
+  margin: 0;
+  text-align: center;
+}
