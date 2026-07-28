@@ -42,10 +42,7 @@ export class ExecFilePlayerctlRunner implements PlayerctlRunner {
       }
 
       const output = `${processError.message} ${processError.stderr ?? ''}`;
-      if (
-        output.includes('No players found') ||
-        output.includes('No player could handle this command')
-      ) {
+      if (output.includes('No players found')) {
         throw new NoActivePlayerError();
       }
       throw error;

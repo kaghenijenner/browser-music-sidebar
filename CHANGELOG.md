@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.1.3
+
+- Fixed Linux browser sessions being shown as inactive when an active player
+  does not support optional MPRIS commands such as shuffle or repeat.
+
 ## 1.1.2
 
 - Simplified the Marketplace description for end users.
