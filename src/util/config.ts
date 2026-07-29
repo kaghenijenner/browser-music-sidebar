@@ -7,6 +7,7 @@ export interface BrowserMusicConfiguration {
   readonly player: string;
   readonly refreshInterval: number;
   readonly showTrackNotifications: boolean;
+  readonly showYouTubeVideo: boolean;
 }
 
 export const getBrowserMusicConfiguration = (): BrowserMusicConfiguration => {
@@ -20,6 +21,7 @@ export const getBrowserMusicConfiguration = (): BrowserMusicConfiguration => {
       'showTrackNotifications',
       false,
     ),
+    showYouTubeVideo: configuration.get<boolean>('showYouTubeVideo', true),
   };
 };
 

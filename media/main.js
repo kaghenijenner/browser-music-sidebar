@@ -5,8 +5,10 @@
   const byId = (id) => document.getElementById(id);
 
   const elements = {
+    artworkFrame: byId('artwork-frame'),
     artwork: byId('artwork'),
     artworkPlaceholder: byId('artwork-placeholder'),
+    youtubeVideo: byId('youtube-video'),
     title: byId('title'),
     artist: byId('artist'),
     album: byId('album'),
@@ -31,6 +33,20 @@
 
   let seeking = false;
   let changingVolume = false;
+  let currentYoutubeVideoId;
+  let failedYoutubeVideoId;
+  let latestYoutubeState;
+  let youtubeMessage = '';
+
+  const youtubePlayerUrl = elements.artworkFrame.dataset.youtubePlayerUrl;
+  const youtubePlayerToken = (() => {
+    try {
+      const parts = new URL(youtubePlayerUrl).pathname.split('/').filter(Boolean);
+      return parts.at(-1);
+    } catch {
+      return undefined;
+    }
+  })();
 
   const post = (command, value) => {
     vscode.postMessage(value === undefined ? { command } : { command, value });
@@ -56,6 +72,71 @@
       elements.artwork.classList.add('hidden');
       elements.artworkPlaceholder.classList.remove('hidden');
     }
+  };
+
+  const postYoutubeState = () => {
+    if (
+      latestYoutubeState === undefined ||
+      elements.youtubeVideo.contentWindow === null
+    ) {
+      return;
+    }
+    elements.youtubeVideo.contentWindow.postMessage(latestYoutubeState, '*');
+  };
+
+  const hideYoutubeVideo = () => {
+    currentYoutubeVideoId = undefined;
+    latestYoutubeState = undefined;
+    elements.youtubeVideo.classList.add('hidden');
+    elements.youtubeVideo.removeAttribute('src');
+  };
+
+  const setYoutubeVideo = (state) => {
+    const videoId = /^[a-zA-Z0-9_-]{11}$/.test(state.youtubeVideoId ?? '')
+      ? state.youtubeVideoId
+      : undefined;
+    const videoUrl =
+      typeof state.youtubeVideoUrl === 'string' &&
+      state.youtubeVideoUrl.startsWith('https://')
+        ? state.youtubeVideoUrl
+        : undefined;
+    if (
+      state.showYouTubeVideo !== true ||
+      youtubePlayerUrl.length === 0 ||
+      youtubePlayerToken === undefined ||
+      videoId === undefined ||
+      videoUrl === undefined ||
+      videoId === failedYoutubeVideoId
+    ) {
+      hideYoutubeVideo();
+      return;
+    }
+
+    if (failedYoutubeVideoId !== undefined && failedYoutubeVideoId !== videoId) {
+      failedYoutubeVideoId = undefined;
+      youtubeMessage = '';
+    }
+    latestYoutubeState = {
+      type: 'youtube-state',
+      token: youtubePlayerToken,
+      videoId,
+      videoUrl,
+      status: state.status,
+      positionSeconds:
+        Number(state.youtubePositionSeconds) ||
+        Number(state.positionSeconds) ||
+        0,
+      sampledAt: Date.now(),
+    };
+
+    if (currentYoutubeVideoId !== videoId) {
+      currentYoutubeVideoId = videoId;
+      youtubeMessage = 'Loading muted video…';
+      elements.message.textContent = youtubeMessage;
+      elements.youtubeVideo.src = youtubePlayerUrl;
+    }
+    elements.youtubeVideo.classList.remove('hidden');
+    postYoutubeState();
   };
 
   const setControlsDisabled = (disabled) => {
@@ -99,9 +180,14 @@
         : 'Waiting for a media player';
     elements.playerName.textContent =
       active && state.playerName ? `Player: ${state.playerName}` : '';
-    elements.message.textContent = state.message || '';
+    elements.message.textContent = state.message || youtubeMessage;
 
     setArtwork(active ? state.artworkUrl : undefined);
+    if (active) {
+      setYoutubeVideo(state);
+    } else {
+      hideYoutubeVideo();
+    }
     setControlsDisabled(!active);
     applyCapabilities(active, state.capabilities);
 
@@ -144,6 +230,7 @@
   };
 
   elements.artwork.addEventListener('error', () => setArtwork(undefined));
+  elements.youtubeVideo.addEventListener('load', postYoutubeState);
   elements.previous.addEventListener('click', () => post('previous'));
   elements.seekBack.addEventListener('click', () => post('seekRelative', -10));
   elements.playPause.addEventListener('click', () => post('playPause'));
@@ -176,6 +263,56 @@
     const message = event.data;
     if (message && message.type === 'state' && message.state) {
       renderState(message.state);
+    } else if (
+      event.source === elements.youtubeVideo.contentWindow &&
+      message?.token === youtubePlayerToken &&
+      (message.type === 'youtube-wrapper-ready' ||
+        message.type === 'youtube-ready' ||
+        message.type === 'youtube-playing')
+    ) {
+      if (message.type === 'youtube-ready' || message.type === 'youtube-playing') {
+        const type = message.type === 'youtube-ready' ? 'ready' : 'playing';
+        if (type === 'playing') {
+          youtubeMessage = '';
+          elements.message.textContent = '';
+        }
+        post('youtubeEvent', {
+          type,
+          videoId: message.videoId,
+          detail: Number(message.detail),
+        });
+      }
+      postYoutubeState();
+    } else if (
+      event.source === elements.youtubeVideo.contentWindow &&
+      message?.type === 'youtube-autoplay-blocked' &&
+      message.token === youtubePlayerToken &&
+      message.videoId === currentYoutubeVideoId
+    ) {
+      youtubeMessage = 'Click the video to start muted playback';
+      elements.message.textContent = youtubeMessage;
+      post('youtubeEvent', {
+        type: 'autoplay-blocked',
+        videoId: message.videoId,
+      });
+    } else if (
+      event.source === elements.youtubeVideo.contentWindow &&
+      message?.type === 'youtube-error' &&
+      message.token === youtubePlayerToken &&
+      message.videoId === currentYoutubeVideoId
+    ) {
+      failedYoutubeVideoId = currentYoutubeVideoId;
+      const errorCode = Number(message.detail);
+      youtubeMessage = Number.isFinite(errorCode)
+        ? `YouTube video unavailable (error ${errorCode})`
+        : 'YouTube video unavailable';
+      elements.message.textContent = youtubeMessage;
+      post('youtubeEvent', {
+        type: 'error',
+        videoId: message.videoId,
+        detail: errorCode,
+      });
+      hideYoutubeVideo();
     }
   });
 

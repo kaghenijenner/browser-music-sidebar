@@ -112,6 +112,7 @@ export class MacPlayerService implements MediaPlayerService {
           metadata.artworkData,
           metadata.artworkMIMEType,
         ),
+        mediaUrl: this.parseMediaUrl(identifier),
         status: this.parseStatus(playbackRate),
         positionSeconds: Math.max(
           0,
@@ -267,5 +268,16 @@ export class MacPlayerService implements MediaPlayerService {
     return /^[a-zA-Z0-9+/=\r\n]+$/u.test(data)
       ? `data:${mimeType};base64,${data.replace(/\s/gu, '')}`
       : undefined;
+  }
+
+  private parseMediaUrl(value: string): string | undefined {
+    try {
+      const url = new URL(value);
+      return url.protocol === 'https:' || url.protocol === 'http:'
+        ? url.toString()
+        : undefined;
+    } catch {
+      return undefined;
+    }
   }
 }

@@ -21,6 +21,11 @@ interface ProcessError extends Error {
   readonly stderr?: string;
 }
 
+interface AutomaticPlayerSelection {
+  readonly name: string;
+  readonly expiresAt: number;
+}
+
 export interface PlayerctlRunner {
   run(arguments_: readonly string[]): Promise<string>;
 }
@@ -54,6 +59,7 @@ type PlayerSelector = () => string;
 
 export class PlayerService implements MediaPlayerService {
   private lastAudibleVolume = DEFAULT_UNMUTED_VOLUME;
+  private automaticPlayerSelection: AutomaticPlayerSelection | undefined;
 
   public constructor(
     private readonly getPlayer: PlayerSelector,
@@ -74,6 +80,7 @@ export class PlayerService implements MediaPlayerService {
             '{{artist}}',
             '{{album}}',
             '{{mpris:artUrl}}',
+            '{{xesam:url}}',
             '{{mpris:length}}',
           ].join(FIELD_SEPARATOR),
         ]),
@@ -98,7 +105,7 @@ export class PlayerService implements MediaPlayerService {
       const parsedVolume = this.parseBoundedNumber(volume, 0, 1, 0);
       const parsedLength =
         this.parseBoundedNumber(
-          fields[5],
+          fields[6],
           0,
           Number.MAX_SAFE_INTEGER,
           0,
@@ -115,6 +122,7 @@ export class PlayerService implements MediaPlayerService {
         artist: artist || 'Unknown artist',
         album,
         artworkUrl: this.parseArtworkUrl(fields[4]),
+        mediaUrl: this.parseMediaUrl(fields[5]),
         status: playbackStatus,
         positionSeconds: this.parseBoundedNumber(
           position,
@@ -217,8 +225,46 @@ export class PlayerService implements MediaPlayerService {
   private async run(arguments_: readonly string[]): Promise<string> {
     const configuredPlayer = this.getPlayer().trim();
     const playerArguments =
-      configuredPlayer.length > 0 ? ['--player', configuredPlayer] : [];
+      configuredPlayer.length > 0
+        ? ['--player', configuredPlayer]
+        : await this.getAutomaticPlayerArguments();
     return this.runner.run([...playerArguments, ...arguments_]);
+  }
+
+  private async getAutomaticPlayerArguments(): Promise<string[]> {
+    if (
+      this.automaticPlayerSelection !== undefined &&
+      this.automaticPlayerSelection.expiresAt > Date.now()
+    ) {
+      return ['--player', this.automaticPlayerSelection.name];
+    }
+
+    const statuses = await this.runner.run([
+      '--all-players',
+      'status',
+      '--format',
+      `{{playerName}}${FIELD_SEPARATOR}{{status}}`,
+    ]);
+    const players = statuses
+      .split(/\r?\n/u)
+      .map((line) => {
+        const [name = '', status = ''] = line.split(FIELD_SEPARATOR);
+        return { name: name.trim(), status: status.trim() };
+      })
+      .filter((player) => player.name.length > 0);
+    const selected =
+      players.find((player) => player.status === 'Playing') ??
+      players.find((player) => player.status === 'Paused') ??
+      players[0];
+    if (selected === undefined) {
+      throw new NoActivePlayerError();
+    }
+
+    this.automaticPlayerSelection = {
+      name: selected.name,
+      expiresAt: Date.now() + 1000,
+    };
+    return ['--player', selected.name];
   }
 
   private async tryRun(arguments_: readonly string[]): Promise<string | undefined> {
@@ -280,6 +326,22 @@ export class PlayerService implements MediaPlayerService {
 
     if (/^data:image\/[a-zA-Z0-9.+-]+(?:;base64)?,/u.test(candidate)) {
       return candidate;
+    }
+
+    try {
+      const url = new URL(candidate);
+      return url.protocol === 'https:' || url.protocol === 'http:'
+        ? url.toString()
+        : undefined;
+    } catch {
+      return undefined;
+    }
+  }
+
+  private parseMediaUrl(value: string | undefined): string | undefined {
+    const candidate = value?.trim();
+    if (candidate === undefined || candidate.length === 0) {
+      return undefined;
     }
 
     try {

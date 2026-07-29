@@ -1,5 +1,15 @@
 # Changelog
 
+## Unreleased
+
+- Added optional muted YouTube video playback in the artwork panel, synchronized
+  with the active browser media session through a native video element and a
+  locally installed `yt-dlp`.
+- Added a click-to-start fallback and player diagnostics for VS Code environments
+  that block muted autoplay.
+- Fixed automatic Linux player selection to prefer an actively playing session
+  when multiple MPRIS players are available.
+
 ## 1.1.3
 
 - Fixed Linux browser sessions being shown as inactive when an active player

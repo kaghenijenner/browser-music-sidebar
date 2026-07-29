@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 import { createMediaPlayerService } from './player/PlayerServiceFactory';
 import { MusicSidebarProvider } from './provider/MusicSidebarProvider';
+import { YouTubePlayerServer } from './provider/YouTubePlayerServer';
 import { getBrowserMusicConfiguration } from './util/config';
 import { OutputChannelLogger } from './util/logger';
 
@@ -11,8 +12,12 @@ const COMMANDS = {
   refresh: 'browserMusicSidebar.refresh',
 } as const;
 
-export const activate = (context: vscode.ExtensionContext): void => {
+export const activate = async (
+  context: vscode.ExtensionContext,
+): Promise<void> => {
   const logger = new OutputChannelLogger();
+  const youtubePlayerServer = new YouTubePlayerServer(logger);
+  await youtubePlayerServer.start();
   const playerService = createMediaPlayerService(
     context.extensionUri,
     () => getBrowserMusicConfiguration().player,
@@ -22,10 +27,13 @@ export const activate = (context: vscode.ExtensionContext): void => {
     context.extensionUri,
     playerService,
     logger,
+    youtubePlayerServer.getUrl(),
+    (videoId) => youtubePlayerServer.resolveVideoUrl(videoId),
   );
 
   context.subscriptions.push(
     logger,
+    youtubePlayerServer,
     provider,
     vscode.window.registerWebviewViewProvider(
       MusicSidebarProvider.viewType,

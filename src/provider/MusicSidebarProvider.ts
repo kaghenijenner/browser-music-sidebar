@@ -12,6 +12,7 @@ import {
   getBrowserMusicConfiguration,
 } from '../util/config';
 import type { Logger } from '../util/logger';
+import { getYouTubeVideoId } from '../util/youtube';
 
 type WebviewCommand =
   | 'playPause'
@@ -23,11 +24,25 @@ type WebviewCommand =
   | 'setVolume'
   | 'toggleMute'
   | 'toggleShuffle'
-  | 'cycleRepeat';
+  | 'cycleRepeat'
+  | 'youtubeEvent';
 
 interface WebviewMessage {
   readonly command?: unknown;
   readonly value?: unknown;
+}
+
+interface YouTubeEventMessage {
+  readonly type?: unknown;
+  readonly videoId?: unknown;
+  readonly detail?: unknown;
+}
+
+interface YouTubePlaybackClock {
+  readonly videoId: string;
+  readonly positionSeconds: number;
+  readonly sampledAt: number;
+  readonly status: PlayerState['status'];
 }
 
 export class MusicSidebarProvider
@@ -39,12 +54,17 @@ export class MusicSidebarProvider
   private refreshTimer: NodeJS.Timeout | undefined;
   private refreshInProgress: Promise<void> | undefined;
   private lastTrackKey: string | undefined;
+  private youtubePlaybackClock: YouTubePlaybackClock | undefined;
   private readonly disposables: vscode.Disposable[] = [];
 
   public constructor(
     private readonly extensionUri: vscode.Uri,
     private readonly playerService: MediaPlayerService,
     private readonly logger: Logger,
+    private readonly youtubePlayerUrl?: string,
+    private readonly resolveYouTubeVideoUrl?: (
+      videoId: string,
+    ) => Promise<string | undefined>,
   ) {
     this.disposables.push(
       vscode.workspace.onDidChangeConfiguration((event) => {
@@ -121,9 +141,79 @@ export class MusicSidebarProvider
   private async performRefresh(): Promise<void> {
     const state = await this.playerService.getState();
     if (this.view !== undefined) {
-      await this.view.webview.postMessage({ type: 'state', state });
+      const youtubeVideoId =
+        getYouTubeVideoId(state.mediaUrl) ??
+        getYouTubeVideoId(state.artworkUrl);
+      const youtubePlaybackClock = this.updateYouTubePlaybackClock(
+        youtubeVideoId,
+        state,
+      );
+      const resolveYouTubeVideoUrl = this.resolveYouTubeVideoUrl;
+      const showYouTubeVideo =
+        getBrowserMusicConfiguration().showYouTubeVideo &&
+        this.youtubePlayerUrl !== undefined &&
+        resolveYouTubeVideoUrl !== undefined;
+      const youtubeVideoUrl =
+        showYouTubeVideo && youtubeVideoId !== undefined
+          ? await resolveYouTubeVideoUrl(youtubeVideoId)
+          : undefined;
+      const youtubePositionSeconds =
+        youtubePlaybackClock === undefined
+          ? state.positionSeconds
+          : this.getYouTubeClockPosition(youtubePlaybackClock, Date.now());
+      await this.view.webview.postMessage({
+        type: 'state',
+        state: {
+          ...state,
+          youtubeVideoId,
+          youtubeVideoUrl,
+          youtubePositionSeconds,
+          showYouTubeVideo,
+        },
+      });
     }
     this.maybeNotifyTrackChange(state);
+  }
+
+  private updateYouTubePlaybackClock(
+    videoId: string | undefined,
+    state: PlayerState,
+  ): YouTubePlaybackClock | undefined {
+    if (videoId === undefined) {
+      this.youtubePlaybackClock = undefined;
+      return undefined;
+    }
+
+    const now = Date.now();
+    const previous = this.youtubePlaybackClock;
+    const previousPosition =
+      previous?.videoId === videoId
+        ? this.getYouTubeClockPosition(previous, now)
+        : 0;
+    const reportedPosition =
+      state.positionSeconds > 1 ? state.positionSeconds : undefined;
+    const positionSeconds =
+      reportedPosition ??
+      (previous?.videoId === videoId
+        ? previousPosition
+        : Math.max(0, state.positionSeconds));
+
+    this.youtubePlaybackClock = {
+      videoId,
+      positionSeconds,
+      sampledAt: now,
+      status: state.status,
+    };
+    return this.youtubePlaybackClock;
+  }
+
+  private getYouTubeClockPosition(
+    clock: YouTubePlaybackClock,
+    now: number,
+  ): number {
+    const elapsedSeconds =
+      clock.status === 'Playing' ? Math.max(0, now - clock.sampledAt) / 1000 : 0;
+    return clock.positionSeconds + elapsedSeconds;
   }
 
   private async handleMessage(message: WebviewMessage): Promise<void> {
@@ -169,9 +259,34 @@ export class MusicSidebarProvider
       case 'cycleRepeat':
         await this.runPlayerAction(() => this.playerService.cycleRepeat());
         break;
+      case 'youtubeEvent':
+        this.logYouTubeEvent(message.value);
+        break;
       default:
         this.logger.info('Ignored an unknown webview command');
     }
+  }
+
+  private logYouTubeEvent(rawValue: unknown): void {
+    if (typeof rawValue !== 'object' || rawValue === null) {
+      return;
+    }
+    const event = rawValue as YouTubeEventMessage;
+    if (
+      typeof event.type !== 'string' ||
+      !/^(ready|playing|autoplay-blocked|error)$/u.test(event.type) ||
+      typeof event.videoId !== 'string' ||
+      !/^[a-zA-Z0-9_-]{11}$/u.test(event.videoId)
+    ) {
+      return;
+    }
+    const detail =
+      typeof event.detail === 'number' && Number.isFinite(event.detail)
+        ? ` (${event.detail})`
+        : '';
+    this.logger.info(
+      `YouTube artwork player: ${event.type}${detail} for ${event.videoId}`,
+    );
   }
 
   private async runNumericAction(
@@ -246,26 +361,43 @@ export class MusicSidebarProvider
 
   private getHtml(webview: vscode.Webview): string {
     const nonce = crypto.randomBytes(18).toString('base64');
-    const scriptUri = webview.asWebviewUri(
-      vscode.Uri.joinPath(this.extensionUri, 'media', 'main.js'),
-    );
-    const styleUri = webview.asWebviewUri(
-      vscode.Uri.joinPath(this.extensionUri, 'media', 'main.css'),
-    );
+    const cacheKey = encodeURIComponent(nonce);
+    const scriptUri = webview
+      .asWebviewUri(
+        vscode.Uri.joinPath(this.extensionUri, 'media', 'main.js'),
+      )
+      .with({ query: `v=${cacheKey}` });
+    const styleUri = webview
+      .asWebviewUri(
+        vscode.Uri.joinPath(this.extensionUri, 'media', 'main.css'),
+      )
+      .with({ query: `v=${cacheKey}` });
+    const youtubeFrameSource =
+      this.youtubePlayerUrl === undefined
+        ? "'none'"
+        : new URL(this.youtubePlayerUrl).origin;
 
     return `<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src ${webview.cspSource} https: http: data:; style-src ${webview.cspSource}; script-src 'nonce-${nonce}';">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; frame-src ${youtubeFrameSource}; img-src ${webview.cspSource} https: http: data:; style-src ${webview.cspSource}; script-src 'nonce-${nonce}';">
   <link rel="stylesheet" href="${styleUri.toString()}">
   <title>Browser Music Sidebar</title>
 </head>
 <body>
   <main class="player" aria-live="polite">
-    <div class="artwork-frame">
+    <div id="artwork-frame" class="artwork-frame" data-youtube-player-url="${this.youtubePlayerUrl ?? ''}">
       <img id="artwork" class="artwork hidden" alt="Album artwork">
+      <iframe
+        id="youtube-video"
+        class="youtube-video hidden"
+        title="YouTube video"
+        tabindex="-1"
+        allow="autoplay; encrypted-media; picture-in-picture"
+        referrerpolicy="strict-origin-when-cross-origin"
+      ></iframe>
       <div id="artwork-placeholder" class="artwork-placeholder" aria-hidden="true">♪</div>
     </div>
 

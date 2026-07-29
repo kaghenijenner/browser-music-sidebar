@@ -19,6 +19,7 @@ export interface PlayerState {
   readonly artist: string;
   readonly album: string;
   readonly artworkUrl?: string;
+  readonly mediaUrl?: string;
   readonly status: PlaybackStatus;
   readonly positionSeconds: number;
   readonly lengthSeconds: number;

@@ -1,13 +1,14 @@
 # Browser Music Sidebar
 
-Control browser-based music from the Visual Studio Code Activity Bar on Linux,
+Control music from the Visual Studio Code Activity Bar on Linux,
 Windows, and macOS. Browser Music Sidebar uses each operating system's media
-session interface and does not use a backend, browser credentials, or Electron
-APIs.
+session interface and does not use a remote backend, browser credentials, or
+Electron APIs.
 
 ## Features
 
 - Album artwork, title, artist, album, playback status, and active player
+- Muted YouTube video in the artwork panel when a video ID is available
 - Previous, play/pause, next, and manual refresh controls
 - Track progress, absolute seeking, and 10-second seek buttons
 - Volume, mute, shuffle, and repeat when supported by the platform/player
@@ -18,7 +19,7 @@ APIs.
 - Theme-aware UI built with VS Code color variables
 - Strict webview Content Security Policy and validated `postMessage` commands
 
-The extension supports Apple Music Web, Spotify Web, YouTube Music,
+The extension supports Apple Music, Spotify, YouTube Music,
 SoundCloud, and other sites that publish media-session information through the
 browser.
 
@@ -105,9 +106,10 @@ Open **Settings** and search for `Browser Music Sidebar`.
 
 | Setting | Type | Default | Description |
 | --- | --- | --- | --- |
-| `browserMusicSidebar.player` | string | `chromium` | Linux: `playerctl` player name. Windows: media-session application-ID substring. Leave empty for automatic selection. Ignored on macOS. |
+| `browserMusicSidebar.player` | string | empty | Linux: playerctl player name. Windows: media-session application-ID substring. Leave empty for automatic selection. Ignored on macOS. |
 | `browserMusicSidebar.refreshInterval` | number | `1500` | Refresh interval in milliseconds; minimum 500. |
 | `browserMusicSidebar.showTrackNotifications` | boolean | `false` | Show a notification when the track changes. |
+| `browserMusicSidebar.showYouTubeVideo` | boolean | `true` | Replace artwork with a muted, synchronized YouTube video when the media session exposes a YouTube video ID and `yt-dlp` is installed. |
 
 Example:
 
@@ -115,7 +117,8 @@ Example:
 {
   "browserMusicSidebar.player": "",
   "browserMusicSidebar.refreshInterval": 1500,
-  "browserMusicSidebar.showTrackNotifications": true
+  "browserMusicSidebar.showTrackNotifications": true,
+  "browserMusicSidebar.showYouTubeVideo": true
 }
 ```
 
@@ -144,6 +147,13 @@ Keybindings can be changed with **Preferences: Open Keyboard Shortcuts**.
   major macOS release.
 - HTTP artwork can be blocked by browser or network policy even though the
   webview permits HTTP, HTTPS, and image data URLs.
+- YouTube video artwork requires a video ID in the media URL or thumbnail and
+  `yt-dlp` on `PATH`. Linux browsers commonly expose an ID; Windows media
+  sessions generally do not.
+- Some videos do not expose a compatible direct stream. Static artwork is kept
+  when stream resolution or native playback fails.
+- VS Code can block muted autoplay until the native player receives a user
+  gesture. When prompted, click the video's own play control once.
 - The extension runs in the local UI extension host. Install it locally when
   using Remote SSH, Dev Containers, or WSL.
 
@@ -154,13 +164,17 @@ The extension executes fixed local media-control programs through Node's
 `nowplaying-cli`, and Windows invokes the packaged PowerShell script with
 separate validated arguments. No metadata is interpolated into executable code.
 
-The webview receives serializable playback state and sends an allow-listed set
-of commands through `postMessage`. It has no Node.js access, uses no `eval`,
-loads no remote scripts or styles, and enforces a nonce-based Content Security
-Policy.
+The main webview receives serializable playback state and sends an allow-listed
+set of commands through `postMessage`. It has no Node.js access, uses no `eval`,
+and enforces a nonce-based Content Security Policy. YouTube video artwork uses
+a token-protected loopback page containing a native muted video element.
 
-No listening history, credentials, or media data are transmitted by the
-extension.
+No listening history or browser credentials are transmitted by the extension.
+When YouTube video artwork is enabled and a video ID is available, the sidebar
+uses the locally installed `yt-dlp` command to resolve a temporary direct video
+stream URL. The native player requests that stream from YouTube. Disable
+`browserMusicSidebar.showYouTubeVideo` to retain static artwork and prevent
+those additional requests.
 
 ## License
 
