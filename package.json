@@ -2,7 +2,7 @@
   "name": "browser-music-sidebar",
   "displayName": "Music & YouTube Sidebar",
   "description": "Control media and search and play YouTube from the VS Code Activity Bar.",
-  "version": "1.1.6",
+  "version": "1.1.7",
   "publisher": "kaghenijenner",
   "icon": "media/icon.png",
   "license": "MIT",
