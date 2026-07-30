@@ -2,6 +2,7 @@ import * as vscode from 'vscode';
 import { createMediaPlayerService } from './player/PlayerServiceFactory';
 import { MusicSidebarProvider } from './provider/MusicSidebarProvider';
 import { YouTubePlayerServer } from './provider/YouTubePlayerServer';
+import { YouTubeSidebarProvider } from './provider/YouTubeSidebarProvider';
 import { getBrowserMusicConfiguration } from './util/config';
 import { OutputChannelLogger } from './util/logger';
 
@@ -30,14 +31,29 @@ export const activate = async (
     youtubePlayerServer.getUrl(),
     (videoId) => youtubePlayerServer.resolveVideoUrl(videoId),
   );
+  const youtubeProvider = new YouTubeSidebarProvider(
+    context.extensionUri,
+    youtubePlayerServer,
+    logger,
+  );
 
   context.subscriptions.push(
     logger,
     youtubePlayerServer,
     provider,
+    youtubeProvider,
     vscode.window.registerWebviewViewProvider(
       MusicSidebarProvider.viewType,
       provider,
+      {
+        webviewOptions: {
+          retainContextWhenHidden: true,
+        },
+      },
+    ),
+    vscode.window.registerWebviewViewProvider(
+      YouTubeSidebarProvider.viewType,
+      youtubeProvider,
       {
         webviewOptions: {
           retainContextWhenHidden: true,

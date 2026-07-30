@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+- Added a dedicated YouTube sidebar view that works without an active browser
+  media session.
+- Added YouTube text search, direct URL lookup, result thumbnails, and
+  independent audio/video playback through a locally installed `yt-dlp`.
+
 ## 1.1.4
 
 - Added optional muted YouTube video playback in the artwork panel, synchronized

@@ -1,7 +1,7 @@
 {
   "name": "browser-music-sidebar",
   "displayName": "Browser Music Sidebar",
-  "description": "Control browser media from the VS Code Activity Bar on Linux, Windows, and macOS.",
+  "description": "Control browser media and search and play YouTube from the VS Code Activity Bar.",
   "version": "1.1.4",
   "publisher": "kaghenijenner",
   "icon": "media/icon.png",
@@ -34,6 +34,7 @@
   ],
   "activationEvents": [
     "onView:browserMusicSidebar.view",
+    "onView:browserMusicSidebar.youtubeView",
     "onCommand:browserMusicSidebar.playPause",
     "onCommand:browserMusicSidebar.next",
     "onCommand:browserMusicSidebar.previous",
@@ -61,6 +62,11 @@
           "type": "webview",
           "id": "browserMusicSidebar.view",
           "name": "Now Playing"
+        },
+        {
+          "type": "webview",
+          "id": "browserMusicSidebar.youtubeView",
+          "name": "YouTube"
         }
       ]
     },

@@ -9,6 +9,8 @@ Electron APIs.
 
 - Album artwork, title, artist, album, playback status, and active player
 - Muted YouTube video in the artwork panel when a video ID is available
+- Dedicated YouTube view with text search, URL lookup, result thumbnails, and
+  independent audio/video playback
 - Previous, play/pause, next, and manual refresh controls
 - Track progress, absolute seeking, and 10-second seek buttons
 - Volume, mute, shuffle, and repeat when supported by the platform/player
@@ -23,6 +25,10 @@ The extension supports Apple Music, Spotify, YouTube Music,
 SoundCloud, and other sites that publish media-session information through the
 browser.
 
+The dedicated YouTube view does not require an active browser media session.
+It uses the locally installed `yt-dlp` command to search public YouTube content
+and resolve a playable stream.
+
 ## Platform support
 
 | Platform | Media interface | Extra requirement |
@@ -34,11 +40,20 @@ browser.
 Feature availability ultimately depends on what the browser and website expose.
 Unsupported controls are disabled automatically.
 
+The separate YouTube search and player requires a current version of `yt-dlp`
+and `ffmpeg` on `PATH` on every platform.
+
 ## Installation
 
 Open the **Extensions** view in VS Code, search for **Browser Music Sidebar**,
 and select **Install**. VS Code automatically installs the package for your
 operating system.
+
+To use the independent YouTube view, install `yt-dlp` and `ffmpeg`.
+Use the `yt-dlp` instructions
+for your operating system in the
+[yt-dlp installation guide](https://github.com/yt-dlp/yt-dlp/wiki/Installation).
+The normal browser media controls work without it.
 
 ## Linux setup
 
@@ -150,10 +165,13 @@ Keybindings can be changed with **Preferences: Open Keyboard Shortcuts**.
 - YouTube video artwork requires a video ID in the media URL or thumbnail and
   `yt-dlp` on `PATH`. Linux browsers commonly expose an ID; Windows media
   sessions generally do not.
+- YouTube search and playback require network access and a recent `yt-dlp`.
+  Search availability can change when YouTube changes its public site.
 - Some videos do not expose a compatible direct stream. Static artwork is kept
   when stream resolution or native playback fails.
-- VS Code can block muted autoplay until the native player receives a user
-  gesture. When prompted, click the video's own play control once.
+- VS Code blocks unmuted autoplay until the native player receives a user
+  gesture. Audio is enabled by default; use **Play** once to start the first
+  independent YouTube video with sound.
 - The extension runs in the local UI extension host. Install it locally when
   using Remote SSH, Dev Containers, or WSL.
 
@@ -175,6 +193,12 @@ uses the locally installed `yt-dlp` command to resolve a temporary direct video
 stream URL. The native player requests that stream from YouTube. Disable
 `browserMusicSidebar.showYouTubeVideo` to retain static artwork and prevent
 those additional requests.
+
+Queries entered in the dedicated YouTube view are passed to `yt-dlp`, which
+requests public search results from YouTube. Selecting a result resolves a
+temporary stream URL and plays it in a token-protected local player. The
+extension does not send searches to its own service or store a remote search
+history.
 
 ## License
 
